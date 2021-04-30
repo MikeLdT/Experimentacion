@@ -1,0 +1,271 @@
+---
+title: "Tarea 3"
+author: "Jorge, Adrian, Carlos, Miguel y Alexa"
+date: '2021'
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+urlcolor: blue
+graphics: yes
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA, message = FALSE,
+                      fig.width = 7, fig.height = 4, fig.align = "right")
+```
+
+```{r, warning=FALSE}
+library(tidyverse)
+library(data.table)
+library(broom)
+library(knitr)
+library(lubridate)
+library(RCT)
+library(fastDummies)
+```
+
+
+
+## Contexto
+
+Rappi te contrata para hacer una intervención que active a sus usuarios en la plataforma. La empresa quiere evaluar si es necesario darles cash los usuarios (y cuánto) para reactivar a los usuarios o si es suficiente con una campaña informativa. 
+
+Para ello, te decides a realizar un experimento factorial donde evaluas: 
+
+- El impacto de mandar un mensaje informativo donde muestres las nuevas tiendas afiliadas a Rappi, y 
+
+- El impacto de dar 100 ó 200 pesos en cupones
+
+Finalmente, les gustaría entender cómo interactuar el mostras las nuevas tiendas aunado con dar dinero en cupones. 
+
+A la empresa le gustaría entender el impacto de la intervención sobre: 
+
+- Las compras 
+
+- La tasa de usuarios activos en la app (transaccionar: abrir app o hacer compras)
+
+\newpage
+
+## Datos
+
+Los dotos para asignar los pueden encontrar en `universo.Rdata`. 
+
+Cargemos los datos
+```{r }
+load('~/Desktop/ALEXA/Maestria/Segundo Semestre/Economia Computacional/tarea_3/universo.Rdata')
+
+```
+
+### 1. Cuántos grupos de tratamiento debe de haber? Elabora sobre que intervención va a recibir cada uno 
+
+- Control: Ninguna intervención
+
+- Trat 1: Sólo mensaje
+
+- Treat 2: Sólo cupón $100
+
+- Treat 3: Sólo cupón de $200
+
+- Treat 4: Sólo cupón de $300
+
+- Treat 5: Mensaje + $100
+
+- Treat 6: Mensaje + $200
+
+- Treat 7: Mensaje + $300
+
+
+### 2 (2pts). Como pueden notar, tenemos 2 poblaciones: Usuarios inactivos y usuarios que nunca estuvieron activos. Para ellos, las tasas de transaccionalidad son hasta ahora 7.94% y 0%. Utiliza esta información para hacer pruebas de poder: Dada esta tasa y población, cuál es el efecto mínimo detectable sobre la tasa de transaccionalidad como función de cuantas observaciones asignamos al grupo control? Interpreta. (Tip: asegurate de dejar claros los grupos comparados en esta prueba)
+
+```{r}
+numero<-universo%>% 
+  group_by(population)%>%
+  summarise(num=n())
+  
+n_control<-numero$num[2]
+n_tratamiento<-numero$num[1]
+
+universo<-universo%>% 
+mutate(tasa_trans=ifelse(population=="Never Active",0,0.0794))
+
+tau_min(outcome_var=universo$tasa_trans,N=length(universo$total_purchases),share_control=n_control/(n_control+n_tratamiento),n_groups = 2)
+```
+
+
+#El efecto mínimo detectable es 0.0689% dad las 90107 observaciones asignadas al grupo control. Esto quiere decir que, a partir de una diferencia de 0.0689% en la tasa de transaccionalidad podría ser significativo el efecto de tratamiento dado el tamaño de la población 104191,una proporción de 13.5% de los inidviduos asignados al grupo de tratamiento, el poder estadístico de 0.8 y una significacncia de 0.05.
+
+### 3. Repite el mismo ejercicio pero ahora para usando las compras totales como variable objetivo. Elige un share de control con base en tu respuesta de esta y la anterior pregunta
+
+```{r}
+tau_min(outcome_var=universo$total_purchases,N=length(universo$total_purchases),share_control=n_control/(n_control+n_tratamiento),n_groups = 2)
+```
+
+### 4 (2ptos) Qué variables crees que puedan estar más correlacionadas con el impacto? Justifica tu respuesta y elige un set
+
+#device value: Esta variable está correlacionada con el impacto ya que posiblemente tenga un mayor impacto en alguien que tiene un valor
+#de dispositivo bajo ya que esta ayuda sería de mayor valor. Mientras que alguien que ya ha gastado mucho es menos probable que aumente 
+#ya que relativo al valor que gastan el monto de los cupones es muy bajo. 
+
+```{r}
+kable(universo%>%group_by(device_value)%>%summarise(media=mean(total_purchases)))
+```
+
+
+#Edad: Es más probable que los individuos jóvenes tengan menores ingresos, por lo que un cupón es más 
+#probable que aumente sus compras en la aplicación. Por el otro lado, es más probable que la gente 
+#mayor se olvide de la aplicación por lo que un mensaje informativo podría aumentar sus compras. 
+
+```{r}
+edad<-universo%>%group_by(age)%>%summarise(media=mean(total_purchases))
+
+plot(x=edad$age,y=edad$media)
+```
+
+#Gender: En la tabla a continuación se puede observar que los hombres gastan menos que las mujeres. Por lo tanto, darle
+#un cupón o un recordatorio a los hombres podría tener mayor impacto. 
+
+
+```{r}
+kable(universo%>%group_by(gender_F)%>%summarise(media=mean(total_purchases)))
+```
+
+### 5 (2ptos) Realiza la asignación aleatoria. Muestra la distribución de los grupos por estrato, los misfits. Sin mirar el balance, lograron una asignación aleatoria exitosa? Justifica tu respuesta 
+
+```{r}
+universo$device_value<-as.factor(universo$device_value)
+universo$genero_cat<-as.factor(universo$gender_F)
+
+aux<-summary(universo$age)
+universo<-universo%>% 
+mutate(edad_cat=ifelse(age<=aux[2],1,ifelse(age>aux[2]&age<=aux[3],2,ifelse(age>aux[3]&age<=aux[5],3,4))))
+universo$edad_cat<-as.factor(universo$edad_cat)
+
+estratos<-treatment_assign(data = universo, share_control=0.5, n_t = 7, strata_varlist = dplyr::vars(device_value,genero_cat,edad_cat), missfits=c("NA"), key = "population")
+
+estratos_sum<-estratos$data%>%
+group_by(strata,treat)%>%
+mutate(population=as.factor(population))%>%
+summarise(n_pop=n())
+
+kable(estratos_sum)
+
+estratos_sum_missfit<-estratos$data%>%
+group_by(strata,missfit)%>%
+mutate(population=as.factor(population))%>%
+summarise(n_pop=n())%>%
+filter(missfit>=1)
+
+kable(estratos_sum_missfit)
+
+estratos_sum_missfit_2<-estratos$summary_strata
+kable(estratos_sum_missfit_2)
+
+sum(estratos_sum_missfit_2$n_missfits)
+```
+
+
+#Es de esperar que se haya logrado una asignación aleatoria existosa ya que por construcción se asignó el tratamiento dentro de cada estrato de interés garantizando que las observaciones estarán balanceadas para esas variables. 
+
+### 6. Qué elección tomaron sobre como manejar los misfits? Elaboren sus razones
+
+#Los misfits se tomaron con NA ya que solamente resultaron 11 de toda la asignación y dado que la muestra es de 104191, los misfits representaron el 0.12% por lo podrían eliminarse sin problema.
+
+
+### 7. Realiza las pruebas de balance t sobre todas las variables (Tip: transforma las categóricas en dummys). Parece haber balance?  
+
+```{r}
+datos_universo<-left_join(estratos$data,estratos_sum_missfit_2,by=c("strata"))
+
+datos_universo<-datos_universo%>%
+filter(missfit != 1)%>%
+dplyr::select(-n_strata,-n_missfits,-missfit)%>%
+filter(strata != 13 | strata !=14)%>%
+dummy_cols(select_columns=c("device_value","edad_cat"))%>%
+dplyr::select(-edad_cat,-device_value,-population,-strata)%>%
+mutate(genero_cat=as.numeric(genero_cat))
+
+balance_table<-balance_table(data=datos_universo,treatment="treat")
+
+kable(balance_table)
+```
+
+#Sí parece haber balance ya que las medias de tratamiento y control son iguales para todas las categorias utilizadas y el valor-p siempre es igual a 1 por lo que no se puede rechazar que la diferencia de las medias sea diferente de 0. 
+
+### 8. Repite el ejercicio pero ahora con pruebas de balance conjuntas. Muestra los resultados (incluyendo el estadístico de prueba, grados de libertad y p values) Interpreta
+
+```{r}
+balance_conjunto<-balance_regression(data=datos_universo,treatment="treat")
+kable(balance_conjunto$F_test)
+```
+
+#Se puede observar que el valor-p es 1, por lo que no podemos rechazar que la diferencia en medias conjuntas sea igual a 0. Es decir, el modelo incluyendo las variables no explica mejor que el modelo nulo la probabilidad de pertenercer al grupo de tratamiento o de control, por lo tanto, los datos también están balanceados de forma conjunta. 
+
+### 9. Elabora porqué parecen cumplirse los 3 supuestos de la asignación
+
+#Los 3 supuestos de la asignación son: 
+#1. SUTVA: 
+#2. Overlap:
+#3. Excludability:
+
+
+### 10. Elabora un pitch de negocio sobre los beneficios que este experimento podría dejar a Rappi. 
+
+## Evaluación 
+
+Pasemos a la evaluación de tu intervención. En este ejercicio, Rappi diseño un nuevo experimento con tus enseñanzas algo distinto al tuyo. 
+
+Este consistió en 6 grupos de tratamiento y un control:
+
+- T1: Dar 100 pesos en cupones (con mensaje)
+
+- T2: Dar 200 pesos en cupones (con mensaje)
+
+- T3: Dar un descuento de 20% en la siguiente compra 
+
+- T4: Dar un descuento de 25% en la siguiente compra
+
+- T5: Ofrecer 2% de descuento en la siguiente compra por cada usuario que refieran
+
+- T6: Ofrecer 4% de descuento en la siguiente compra por cada usuario que refieran
+
+
+Te piden ahora medir este experimento (estratificado por `phone_verified`, `population` y `device_value`) en la base
+`base_evaluacion.Rdata`. Las variables endogenas son `total_purchases_after` que refleja el gasto total post-tratamiento y `transacted` que refleja abrir la app o hacer compras. 
+
+
+Carguemos la base 
+
+```{r }
+#rm(list = ls())
+
+#load('Bases input/base_evaluacion.Rdata')
+
+
+```
+
+### 10 (2ptos). Muestra el estimador ITT para la tasa de transaccionalidad. Recuerda que tu cliente es un grupo empresarial. Por ende, muestra una gráfica donde se aprecie la diferencia entre los grupos de tratamiento y las significancias de manera sencilla. Interpreta tus resultados 
+
+
+
+### 11. Repite el ejercicio sobre compras totales. Que resultados se aprecian? Que indica esto sobre la rentabilidad del sistema de incentivos? 
+
+
+### 12. Interpreta el impacto del gruop de referidos 4%. Porque el estimador es tan diferente y a la vez es no significativo? Por que esto no paso en la tasa de transaccionalidad?
+
+
+### 13 (2ptos). Repite la medición en 11 pero ahora con `log(total_purchases_after+1)`. Que encuentras ahora? Interpreta las diferencias
+
+
+
+### 14 (4ptos). Describre que variables necesitas para hacer un análisis costo beneficio completo. Les doy algunas: Ticket promedio $100, Customer Lifetime value: $1,100. Con esto, que sistema de incentivos recomendarías? Porqué? Muestra el razonamiento detrás de tu recomendación
+
+
+### 15 (2ptos). Realiza la estimación de efectos heterogeneos para ambas variables usando `population`. Que encuentras? existe alguna subpoblación para la que los efectos difieran del promedio? Para cada efecto, muestra gráficas como lo hiciste en los ITTs
+
+
+### 16 (2ptos). Repite el ejercicio para ``phone_verified`. 
+
+
+
+### 17. Presenta una propuesta de focalización con base en tus resultados generales y heterogeneos. 
