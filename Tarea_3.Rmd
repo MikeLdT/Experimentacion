@@ -303,12 +303,45 @@ ggplot(ics,aes(tratamiento,estimate))+
 
 ### 13 (2ptos). Repite la medición en 11 pero ahora con `log(total_purchases_after+1)`. Que encuentras ahora? Interpreta las diferencias
 
+```{r 11ITTlog}
+a <- impact_eval(mutate(universo_f,"log(total_purchases_after+1)"=log(total_purchases_after+1)), 
+                 endogenous_vars = c("log(total_purchases_after+1)"),treatment = c("treat"))
+
+
+alpha <- 0.05
+
+ics11 <- mapply(function(x,y){
+  ic <- c(x-qnorm(1-alpha/2)*y,x,x+qnorm(1-alpha/2)*y)
+  return(ic)
+},a[[1]][-1,]$estimate,a[[1]][-1,]$std.error)
+
+
+
+ics <- data.frame(ics11,row.names = c("lower","estimate","upper"))
+ics <- rbind(tratamiento=1:6,ics)
+ics <- as.data.frame(t(as.matrix(ics)))
+
+
+ggplot(ics,aes(tratamiento,estimate))+
+  geom_pointrange(aes(ymin=lower,ymax=upper))+
+  geom_hline(yintercept = 0)
+  
+
+```
+
 
 
 ### 14 (4ptos). Describre que variables necesitas para hacer un análisis costo beneficio completo. Les doy algunas: Ticket promedio $100, Customer Lifetime value: $1,100. Con esto, que sistema de incentivos recomendarías? Porqué? Muestra el razonamiento detrás de tu recomendación
 
 
 ### 15 (2ptos). Realiza la estimación de efectos heterogeneos para ambas variables usando `population`. Que encuentras? existe alguna subpoblación para la que los efectos difieran del promedio? Para cada efecto, muestra gráficas como lo hiciste en los ITTs
+```{r 10ITT}
+
+a <- impact_eval(universo_f, endogenous_vars = c("total_purchases_after","transacted"),treatment = c("treat"),heterogenous_vars = c("population"))
+
+
+```
+
 
 
 ### 16 (2ptos). Repite el ejercicio para ``phone_verified`. 
