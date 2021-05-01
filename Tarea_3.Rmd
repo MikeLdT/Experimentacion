@@ -53,7 +53,7 @@ Los dotos para asignar los pueden encontrar en `universo.Rdata`.
 
 Cargemos los datos
 ```{r }
-load('~/Desktop/ALEXA/Maestria/Segundo Semestre/Economia Computacional/tarea_3/universo.Rdata')
+load('universo.Rdata')
 
 ```
 
