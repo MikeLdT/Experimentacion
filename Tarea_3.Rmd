@@ -237,18 +237,65 @@ Te piden ahora medir este experimento (estratificado por `phone_verified`, `popu
 Carguemos la base 
 
 ```{r }
-#rm(list = ls())
+rm(list = ls())
 
-#load('Bases input/base_evaluacion.Rdata')
+load('base_evaluacion.Rdata')
 
 
 ```
 
 ### 10 (2ptos). Muestra el estimador ITT para la tasa de transaccionalidad. Recuerda que tu cliente es un grupo empresarial. Por ende, muestra una gráfica donde se aprecie la diferencia entre los grupos de tratamiento y las significancias de manera sencilla. Interpreta tus resultados 
 
+```{r 10ITT}
+
+a <- impact_eval(universo_f, endogenous_vars = c("total_purchases_after","transacted"),treatment = c("treat"))
+
+alpha <- 0.01
+
+ics <- mapply(function(x,y){
+  ic <- c(x-qnorm(1-alpha/2)*y,x,x+qnorm(1-alpha/2)*y)
+  return(ic)
+},a[[2]][-1,]$estimate,a[[2]][-1,]$std.error)
+
+
+
+ics <- data.frame(ics,row.names = c("lower","estimate","upper"))
+ics <- rbind(tratamiento=1:6,ics)
+ics <- as.data.frame(t(as.matrix(ics)))
+
+
+ggplot(ics,aes(tratamiento,estimate))+
+  geom_pointrange(aes(ymin=lower,ymax=upper))+
+  geom_hline(yintercept = 0)
+  
+
+```
 
 
 ### 11. Repite el ejercicio sobre compras totales. Que resultados se aprecian? Que indica esto sobre la rentabilidad del sistema de incentivos? 
+```{r 11ITT}
+
+alpha <- 0.05
+
+ics11 <- mapply(function(x,y){
+  ic <- c(x-qnorm(1-alpha/2)*y,x,x+qnorm(1-alpha/2)*y)
+  return(ic)
+},a[[1]][-1,]$estimate,a[[1]][-1,]$std.error)
+
+
+
+ics <- data.frame(ics11,row.names = c("lower","estimate","upper"))
+ics <- rbind(tratamiento=1:6,ics)
+ics <- as.data.frame(t(as.matrix(ics)))
+
+
+ggplot(ics,aes(tratamiento,estimate))+
+  geom_pointrange(aes(ymin=lower,ymax=upper))+
+  geom_hline(yintercept = 0)
+  
+
+```
+
 
 
 ### 12. Interpreta el impacto del gruop de referidos 4%. Porque el estimador es tan diferente y a la vez es no significativo? Por que esto no paso en la tasa de transaccionalidad?
