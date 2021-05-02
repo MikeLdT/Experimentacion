@@ -10,12 +10,12 @@ urlcolor: blue
 graphics: yes
 ---
 
-```{r setup, include = FALSE}
+```{r , include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = NA, message = FALSE,
                       fig.width = 7, fig.height = 4, fig.align = "right")
 ```
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, echo=FALSE}
 library(tidyverse)
 library(data.table)
 library(broom)
@@ -23,6 +23,7 @@ library(knitr)
 library(lubridate)
 library(RCT)
 library(fastDummies)
+library(kableExtra)
 ```
 
 
@@ -52,7 +53,8 @@ A la empresa le gustaría entender el impacto de la intervención sobre:
 Los dotos para asignar los pueden encontrar en `universo.Rdata`. 
 
 Cargemos los datos
-```{r }
+```{r , warning=FALSE, message=FALSE , echo=FALSE}
+setwd("~/Desktop/ALEXA/Maestria/Segundo Semestre/Economia Computacional/tarea_3/")
 load('universo.Rdata')
 
 ```
@@ -78,7 +80,7 @@ load('universo.Rdata')
 
 ### 2 (2pts). Como pueden notar, tenemos 2 poblaciones: Usuarios inactivos y usuarios que nunca estuvieron activos. Para ellos, las tasas de transaccionalidad son hasta ahora 7.94% y 0%. Utiliza esta información para hacer pruebas de poder: Dada esta tasa y población, cuál es el efecto mínimo detectable sobre la tasa de transaccionalidad como función de cuantas observaciones asignamos al grupo control? Interpreta. (Tip: asegurate de dejar claros los grupos comparados en esta prueba)
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 numero<-universo%>% 
   group_by(population)%>%
   summarise(num=n())
@@ -89,50 +91,68 @@ n_tratamiento<-numero$num[1]
 universo<-universo%>% 
 mutate(tasa_trans=ifelse(population=="Never Active",0,0.0794))
 
-tau_min(outcome_var=universo$tasa_trans,N=length(universo$total_purchases),share_control=n_control/(n_control+n_tratamiento),n_groups = 2)
+tabla_taumin<-tau_min(outcome_var=universo$tasa_trans,N=length(universo$total_purchases),share_control=n_control/(n_control+n_tratamiento),n_groups = 2)
+
+tabla_taumin%>%
+  kbl(caption = "Tabla 1 del Efecto Mìnimo Detectable",align = 'c') %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
 ```
 
 
-#El efecto mínimo detectable es 0.0689% dad las 90107 observaciones asignadas al grupo control. Esto quiere decir que, a partir de una diferencia de 0.0689% en la tasa de transaccionalidad podría ser significativo el efecto de tratamiento dado el tamaño de la población 104191,una proporción de 13.5% de los inidviduos asignados al grupo de tratamiento, el poder estadístico de 0.8 y una significacncia de 0.05.
+El efecto mínimo detectable es 0.0689% dadas las 90107 observaciones asignadas al grupo control. Esto quiere decir que, a partir de una diferencia de 0.0689% en la tasa de transaccionalidad podría ser significativo el efecto de tratamiento dados: i) el tamaño de la población 104191, ii) una proporción de 13.5% de los inidviduos asignados al grupo de tratamiento, iii) el poder estadístico de 0.8 y iv) una significacncia de 0.05.
 
 ### 3. Repite el mismo ejercicio pero ahora para usando las compras totales como variable objetivo. Elige un share de control con base en tu respuesta de esta y la anterior pregunta
 
-```{r}
-tau_min(outcome_var=universo$total_purchases,N=length(universo$total_purchases),share_control=n_control/(n_control+n_tratamiento),n_groups = 2)
+```{r, warning=FALSE, message=FALSE }
+tab2_taumin<-tau_min(outcome_var=universo$total_purchases,N=length(universo$total_purchases),share_control=n_control/(n_control+n_tratamiento),n_groups = 2)
+
+tab2_taumin%>%
+  kbl(caption = "Tabla 2 del Efecto Mínimo Detectable",align = 'c') %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 ```
+En esta ocasión el efecto mínimo detectable resultó 14.71, lo que implica que a partir de una diferencia de gasto de $14.71 entre los tratados y los no tratados, podríamos comenzar a observar un efecto de tratamiento significativo, bajo los mismos parámetros que en la pregunta anterior.
 
 ### 4 (2ptos) Qué variables crees que puedan estar más correlacionadas con el impacto? Justifica tu respuesta y elige un set
 
-#device value: Esta variable está correlacionada con el impacto ya que posiblemente tenga un mayor impacto en alguien que tiene un valor
-#de dispositivo bajo ya que esta ayuda sería de mayor valor. Mientras que alguien que ya ha gastado mucho es menos probable que aumente 
-#ya que relativo al valor que gastan el monto de los cupones es muy bajo. 
+- Device value: Esta variable está correlacionada con el impacto ya que posiblemente tenga un mayor impacto en alguien que tiene un valor de dispositivo bajo ya que esta ayuda sería de mayor valor. Mientras que alguien que ya ha gastado mucho es menos probable que aumente ya que relativo al valor que gastan el monto de los cupones es muy bajo. 
 
-```{r}
-kable(universo%>%group_by(device_value)%>%summarise(media=mean(total_purchases)))
+```{r, warning=FALSE, message=FALSE}
+
+universo%>%
+  group_by(device_value)%>%
+  summarise(media=mean(total_purchases))%>%
+  kbl(caption = "Tabla: Compras promedio por gurpo de valor del dispositivo",align = 'c') %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 ```
 
 
-#Edad: Es más probable que los individuos jóvenes tengan menores ingresos, por lo que un cupón es más 
-#probable que aumente sus compras en la aplicación. Por el otro lado, es más probable que la gente 
-#mayor se olvide de la aplicación por lo que un mensaje informativo podría aumentar sus compras. 
+- Edad: Es más probable que los individuos jóvenes tengan menores ingresos, por lo que un cupón es más  probable que aumente sus compras en la aplicación. Por el otro lado, es más probable que la gentemayor se olvide de la aplicación por lo que un mensaje informativo podría aumentar sus compras. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 edad<-universo%>%group_by(age)%>%summarise(media=mean(total_purchases))
 
-plot(x=edad$age,y=edad$media)
+
+ggplot(edad, aes(x=age,y=media))+
+  geom_point(color="steelblue")+
+  theme_minimal()+
+  labs(x="Edad", y="Compras totales promedio")
 ```
 
-#Gender: En la tabla a continuación se puede observar que los hombres gastan menos que las mujeres. Por lo tanto, darle
-#un cupón o un recordatorio a los hombres podría tener mayor impacto. 
+- Gender: En la tabla a continuación se puede observar que los hombres gastan menos que las mujeres. Por lo tanto, darle un cupón o un recordatorio a los hombres podría tener mayor impacto. 
 
 
-```{r}
-kable(universo%>%group_by(gender_F)%>%summarise(media=mean(total_purchases)))
+```{r, warning=FALSE, message=FALSE}
+universo%>%
+  group_by(gender_F)%>%
+  summarise(media=mean(total_purchases))%>%
+  kbl(caption = "Tabla: Compras promedio por génro",align = 'c') %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 ```
 
 ### 5 (2ptos) Realiza la asignación aleatoria. Muestra la distribución de los grupos por estrato, los misfits. Sin mirar el balance, lograron una asignación aleatoria exitosa? Justifica tu respuesta 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 universo$device_value<-as.factor(universo$device_value)
 universo$genero_cat<-as.factor(universo$gender_F)
 
@@ -148,7 +168,9 @@ group_by(strata,treat)%>%
 mutate(population=as.factor(population))%>%
 summarise(n_pop=n())
 
-kable(estratos_sum)
+estratos_sum%>%
+  kbl(caption = "Tabla: Distribución de los grupos por estrato y tratamiento",align = 'c') %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 
 estratos_sum_missfit<-estratos$data%>%
 group_by(strata,missfit)%>%
@@ -156,25 +178,32 @@ mutate(population=as.factor(population))%>%
 summarise(n_pop=n())%>%
 filter(missfit>=1)
 
-kable(estratos_sum_missfit)
 
 estratos_sum_missfit_2<-estratos$summary_strata
-kable(estratos_sum_missfit_2)
 
+estratos_sum_missfit_2%>%
+  kbl(caption = "Tabla: Distribuciones de observaciones y misfits por grupos",align = 'c') %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>% 
+  footnote(general = "Los missfits son las observaciones que tienen NA en el tratamiento.")
+```
+
+Así el número total de missfits es:
+```{r, warning=FALSE, message=FALSE}
 sum(estratos_sum_missfit_2$n_missfits)
 ```
 
 
-#Es de esperar que se haya logrado una asignación aleatoria existosa ya que por construcción se asignó el tratamiento dentro de cada estrato de interés garantizando que las observaciones estarán balanceadas para esas variables. 
+
+Es de esperar que se haya logrado una asignación aleatoria existosa ya que por construcción se asignó el tratamiento dentro de cada estrato de interés garantizando que las observaciones estarán balanceadas para esas variables. 
 
 ### 6. Qué elección tomaron sobre como manejar los misfits? Elaboren sus razones
 
-#Los misfits se tomaron con NA ya que solamente resultaron 11 de toda la asignación y dado que la muestra es de 104191, los misfits representaron el 0.12% por lo podrían eliminarse sin problema.
+Los misfits se tomaron con NA ya que solamente resultaron 11 de toda la asignación y dado que la muestra es de 104191, los misfits representaron el 0.12% por lo podrían eliminarse sin problema.
 
 
 ### 7. Realiza las pruebas de balance t sobre todas las variables (Tip: transforma las categóricas en dummys). Parece haber balance?  
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 datos_universo<-left_join(estratos$data,estratos_sum_missfit_2,by=c("strata"))
 
 datos_universo<-datos_universo%>%
@@ -187,26 +216,40 @@ mutate(genero_cat=as.numeric(genero_cat))
 
 balance_table<-balance_table(data=datos_universo,treatment="treat")
 
-kable(balance_table)
+
+balance_table%>%
+  kbl(caption = "Tabla: Tabla de Balance",align = 'c', digits = 3) %>%
+  kable_classic(full_width = F, html_font = "Cambria") 
 ```
 
-#Sí parece haber balance ya que las medias de tratamiento y control son iguales para todas las categorias utilizadas y el valor-p siempre es igual a 1 por lo que no se puede rechazar que la diferencia de las medias sea diferente de 0. 
+Sí parece haber balance ya que las medias de tratamiento y control son iguales para casi todas las categorias utilizadas y el valor-p generalmente no es significativo para la mayoría de los casos por lo que no se puede rechazar que la diferencia de las medias sea diferente de 0. 
 
 ### 8. Repite el ejercicio pero ahora con pruebas de balance conjuntas. Muestra los resultados (incluyendo el estadístico de prueba, grados de libertad y p values) Interpreta
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 balance_conjunto<-balance_regression(data=datos_universo,treatment="treat")
-kable(balance_conjunto$F_test)
+tab_pruebaf<-balance_conjunto$F_test
+
+tab_pruebaf%>%
+  kbl(caption = "Tabla: Prueba F",align = 'c', digits = 2) %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
 ```
 
-#Se puede observar que el valor-p es 1, por lo que no podemos rechazar que la diferencia en medias conjuntas sea igual a 0. Es decir, el modelo incluyendo las variables no explica mejor que el modelo nulo la probabilidad de pertenercer al grupo de tratamiento o de control, por lo tanto, los datos también están balanceados de forma conjunta. 
+Se puede observar que el valor-p es 1, por lo que no podemos rechazar que la diferencia en medias conjuntas sea igual a 0. Es decir, el modelo incluyendo las variables no explica mejor que el modelo nulo la probabilidad de pertenercer al grupo de tratamiento o de control, por lo tanto, los datos también están balanceados de forma conjunta. 
 
 ### 9. Elabora porqué parecen cumplirse los 3 supuestos de la asignación
 
-#Los 3 supuestos de la asignación son: 
-#1. SUTVA: 
-#2. Overlap:
-#3. Excludability:
+Los 3 supuestos de la asignación son: 
+
+1. SUTVA:  Esto significa que la asignación de tratamiento de un individuo no se relaciona con la asignación de los demás (son independientes). En este caso dado que los tratamientos se realizan a distitnos usuarios de Rappi, es poco probable que si se le otorgue un cupón o se le envía un mensaje a un individuo, éste pueda llegar a afectar a otros individuos. Si bien, podría darse el caso de una pareja o una familia en la que el tratamiento a un integrante afecte el comportamiento del resto, esto sería limitado y poco probable que afecte a un porcentaje significativo de la muestra.
+
+2. Overlap: Dado que realizamos una asignación porbabilística aleatoria estratificada, todas las observaciones tenían una probabilidad de pertenecer, tanto al grupo de tratamiento como al de control, mayor a 0. 
+
+
+3. Excludability: Dado que realizamos la asignación de forma aleatoria, esta fue independiente de las características de cada observación (tanto observables como no observables), es decir, el tratamiento es independiente del resto de las variables de la base de datos. Esto se pudo corroborar en la tabla de balance realizada anteriormente.
+
+
 
 
 ### 10. Elabora un pitch de negocio sobre los beneficios que este experimento podría dejar a Rappi. 
@@ -236,9 +279,9 @@ Te piden ahora medir este experimento (estratificado por `phone_verified`, `popu
 
 Carguemos la base 
 
-```{r }
-rm(list = ls())
-
+```{r}
+#rm(list = ls())
+setwd("~/Desktop/ALEXA/Maestria/Segundo Semestre/Economia Computacional/tarea_3/")
 load('base_evaluacion.Rdata')
 
 
@@ -335,7 +378,7 @@ ggplot(ics,aes(tratamiento,estimate))+
 
 
 ### 15 (2ptos). Realiza la estimación de efectos heterogeneos para ambas variables usando `population`. Que encuentras? existe alguna subpoblación para la que los efectos difieran del promedio? Para cada efecto, muestra gráficas como lo hiciste en los ITTs
-```{r 10ITT}
+```{r 10ITT2}
 
 a <- impact_eval(universo_f, endogenous_vars = c("total_purchases_after","transacted"),treatment = c("treat"),heterogenous_vars = c("population"))
 
