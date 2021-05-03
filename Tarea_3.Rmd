@@ -12,7 +12,7 @@ graphics: yes
 
 ```{r , include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = NA, message = FALSE,
-                      fig.width = 7, fig.height = 4, fig.align = "right")
+                      fig.width = 7, fig.height = 4, fig.align = "center")
 ```
 
 ```{r, warning=FALSE, echo=FALSE}
@@ -24,6 +24,7 @@ library(lubridate)
 library(RCT)
 library(fastDummies)
 library(kableExtra)
+library(gridExtra)
 ```
 
 
@@ -54,7 +55,7 @@ Los dotos para asignar los pueden encontrar en `universo.Rdata`.
 
 Cargemos los datos
 ```{r , warning=FALSE, message=FALSE , echo=FALSE}
-setwd("~/Desktop/ALEXA/Maestria/Segundo Semestre/Economia Computacional/tarea_3/")
+#setwd("~/Desktop/ALEXA/Maestria/Segundo Semestre/Economia Computacional/tarea_3/")
 load('universo.Rdata')
 
 ```
@@ -280,8 +281,8 @@ Te piden ahora medir este experimento (estratificado por `phone_verified`, `popu
 Carguemos la base 
 
 ```{r}
-#rm(list = ls())
-setwd("~/Desktop/ALEXA/Maestria/Segundo Semestre/Economia Computacional/tarea_3/")
+rm(list = ls())
+#setwd("~/Desktop/ALEXA/Maestria/Segundo Semestre/Economia Computacional/tarea_3/")
 load('base_evaluacion.Rdata')
 
 
@@ -343,6 +344,8 @@ ggplot(ics,aes(tratamiento,estimate))+
 
 ### 12. Interpreta el impacto del gruop de referidos 4%. Porque el estimador es tan diferente y a la vez es no significativo? Por que esto no paso en la tasa de transaccionalidad?
 
+Para el grupo de tratamiento 6 en ambas preguntas el ITT mide cosas distintas. En primer lugar, el ITT de `transacted` representa una probabilidad ya que la variable objetivo es una dummy, mientras que en la pregunta 11 se refiere al impacto en el gasto. Puede que la medida sea significativa para que las personas entren en la aplicación pero no para inducirlos a gastar.
+
 
 ### 13 (2ptos). Repite la medición en 11 pero ahora con `log(total_purchases_after+1)`. Que encuentras ahora? Interpreta las diferencias
 
@@ -371,24 +374,143 @@ ggplot(ics,aes(tratamiento,estimate))+
   
 
 ```
+Ahora el ITT el grupo de tratamiento 6 es significativo a diferencia de la pregunta anterior. En este caso el ITT representa el cambio porcentual en gasto de quienes reciben el tratamiento respecto a los que no. En ese sentido, el cambio puede deberse a dos cosas: 
 
+  - que el impacto del tratamiento induce a quienes no gastaban nada a gastar muy poco, y ese impacto en niveles es poco significativo mientras que en porcentaje sí lo es.
+  - el logaritmo suaviza la distribución de gasto, lo que disminuye la varianza.
+  
 
 
 ### 14 (4ptos). Describre que variables necesitas para hacer un análisis costo beneficio completo. Les doy algunas: Ticket promedio $100, Customer Lifetime value: $1,100. Con esto, que sistema de incentivos recomendarías? Porqué? Muestra el razonamiento detrás de tu recomendación
 
+Para los tratamientos lump-sum (t1 y t2) que consisten en regalar cupones encontramos que el impacto en compras es  estadísticamente igual a 0. Entonces el beneficio marginal, sin importar de cuánto sea el margen, es de 0. 
+
 
 ### 15 (2ptos). Realiza la estimación de efectos heterogeneos para ambas variables usando `population`. Que encuentras? existe alguna subpoblación para la que los efectos difieran del promedio? Para cada efecto, muestra gráficas como lo hiciste en los ITTs
-```{r 10ITT2}
+```{r 15ITT}
 
 a <- impact_eval(universo_f, endogenous_vars = c("total_purchases_after","transacted"),treatment = c("treat"),heterogenous_vars = c("population"))
 
+ics15 <- mapply(function(x,y){
+  
+  ic <- c(x-qnorm(1-alpha/2)*y,x,x+qnorm(1-alpha/2)*y)
+  return(ic)
+},a[[1]][-1,]$estimate,a[[1]][-1,]$std.error)
 
+
+
+ics <- data.frame(ics11,row.names = c("lower","estimate","upper"))
+ics <- rbind(tratamiento=1:6,ics)
+ics <- as.data.frame(t(as.matrix(ics)))
+
+
+b <- ggplot(a[[2]],aes(y=estimate))+
+  geom_bar(aes(x=term,fill=term),stat="identity",width = 0.8)+
+  geom_text(aes(x=term,label=scales::percent(round(estimate,3)),vjust=-0.25),size=3)+
+  scale_x_discrete(labels=c("intercept","t1","t2","t3","t4","t5","t6"))+
+  theme(legend.position = "none")+
+  geom_text(aes(x=term,label=paste0("p=",round(p.value,3)),vjust=1),size=2.5,color="red4")+
+  ylim(0,0.2)
+
+
+c <- ggplot(a[[4]],aes(y=estimate))+
+  geom_bar(aes(x=term,fill=term),stat="identity",width = 0.8)+
+  facet_wrap(~population)+
+  geom_text(aes(x=term,label=scales::percent(round(estimate,3)),vjust=-0.25),size=3)+
+  scale_x_discrete(labels=c("intercept","t1","t2","t3","t4","t5","t6"))+
+  theme(legend.position = "none")+
+  geom_text(aes(x=term,label=paste0("p=",round(p.value,3)),vjust=1),size=2.5,color="red4")+
+  ylim(-0.1,0.2)
+
+
+grid.arrange(b,c)
 ```
+Los usuarios que nunca estuvieron activos reaccionan fuertemente a los descuentos en las siguientes compras y al descuento de 4% por referir usuarios. T1, T3, T5 y T6 no causaron un impacto en los usuarios inactivos. T1 y T5 no impactaron en ninguna de las subpoblaciones. T2 y T4 fueron significativos para los usuarios inactivos aunque su efecto no fue tan grande y de hecho fue de la misma magnitud que para los nunca activos. 
 
+T3,T4 y T6 fueron muy diferentes al promedio y muy significativos para los usuarios nunca activos. En contraste, T3 y T4 tuvieron efecto muy por debajo del promedio para los usuarios inactivos. En general T2 y T5 no tuvieron efectos muy diferenciados.
+
+```{r}
+d <- ggplot(a[[1]],aes(y=estimate))+
+  geom_bar(aes(x=term,fill=term),stat="identity",width = 0.8)+
+  geom_text(aes(x=term,label=round(estimate,3),vjust=-0.25),size=3)+
+  scale_x_discrete(labels=c("intercept","t1","t2","t3","t4","t5","t6"))+
+  theme(legend.position = "none")+
+  geom_text(aes(x=term,label=paste0("p=",round(p.value,3)),vjust=1),size=2.5,color="red4")+
+  ylim(-40,120)
+
+
+e <- ggplot(a[[3]],aes(y=estimate))+
+  geom_bar(aes(x=term,fill=term),stat="identity",width = 0.8)+
+  facet_wrap(~population)+
+  geom_text(aes(x=term,label=round(estimate,3),vjust=-0.25),size=3)+
+  scale_x_discrete(labels=c("intercept","t1","t2","t3","t4","t5","t6"))+
+  theme(legend.position = "none")+
+  geom_text(aes(x=term,label=paste0("p=",round(p.value,3)),vjust=1),size=2.5,color="red4")+
+  ylim(-80,160)
+
+grid.arrange(d,e)
+  
+```
+Ninguno de los tratamientos tuvo un efecto significativo en las compras de los usuarios, para ninguna de las subpoblaciones.
 
 
 ### 16 (2ptos). Repite el ejercicio para ``phone_verified`. 
+```{r 16ITT}
+
+a <- impact_eval(universo_f, endogenous_vars = c("total_purchases_after","transacted"),treatment = c("treat"),heterogenous_vars = c("phone_verified"))
 
 
+
+
+b <- ggplot(a[[2]],aes(y=estimate))+
+  geom_bar(aes(x=term,fill=term),stat="identity",width = 0.8)+
+  geom_text(aes(x=term,label=scales::percent(round(estimate,3)),vjust=-0.25),size=3)+
+  scale_x_discrete(labels=c("intercept","t1","t2","t3","t4","t5","t6"))+
+  theme(legend.position = "none")+
+  geom_text(aes(x=term,label=paste0("p=",round(p.value,3)),vjust=1),size=2.5,color="red4")+
+  ylim(0,0.2)
+
+
+c <- ggplot(a[[4]],aes(y=estimate))+
+  geom_bar(aes(x=term,fill=term),stat="identity",width = 0.8)+
+  facet_wrap(~phone_verified)+
+  geom_text(aes(x=term,label=scales::percent(round(estimate,3)),vjust=-0.25),size=3)+
+  scale_x_discrete(labels=c("intercept","t1","t2","t3","t4","t5","t6"))+
+  theme(legend.position = "none")+
+  geom_text(aes(x=term,label=paste0("p=",round(p.value,3)),vjust=1),size=2.5,color="red4")+
+  ylim(-0.1,0.2)
+
+
+grid.arrange(b,c)
+```
+
+T1 no tiene un impacto diferenciado entre subpoblaciones, entonces el impacto en las poblaciones es igual al impacto promedio. T4 es matyor para quienes no tienen el celular verificado respecto a quienes no lo tienen. T5 no es significativo para quienes sí tienen su teléfono verificado y para los que no tienen verificado el impacto es mucho más grande que el efecto promedio. T6 es muy significativo y potente para quienes sí tiene su teléfono verificado y mayor que el efecto promedio. T3 es ligeramente mayor al promedio para quienes tienen su teléfono verificado.
+```{r}
+d <- ggplot(a[[1]],aes(y=estimate))+
+  geom_bar(aes(x=term,fill=term),stat="identity",width = 0.8)+
+  geom_text(aes(x=term,label=round(estimate,3),vjust=-0.25),size=3)+
+  scale_x_discrete(labels=c("intercept","t1","t2","t3","t4","t5","t6"))+
+  theme(legend.position = "none")+
+  geom_text(aes(x=term,label=paste0("p=",round(p.value,3)),vjust=1),size=2.5,color="red4")+
+  ylim(-40,120)
+
+
+e <- ggplot(a[[3]],aes(y=estimate))+
+  geom_bar(aes(x=term,fill=term),stat="identity",width = 0.8)+
+  facet_wrap(~phone_verified)+
+  geom_text(aes(x=term,label=round(estimate,3),vjust=-0.25),size=3)+
+  scale_x_discrete(labels=c("intercept","t1","t2","t3","t4","t5","t6"))+
+  theme(legend.position = "none")+
+  geom_text(aes(x=term,label=paste0("p=",round(p.value,3)),vjust=1),size=2.5,color="red4")+
+  ylim(-80,280)
+
+grid.arrange(d,e)
+  
+```
+Ningún tratamiento tiene un efecto significativo en la población.
 
 ### 17. Presenta una propuesta de focalización con base en tus resultados generales y heterogeneos. 
+
+Nos dimos cuenta que T3,T4 y T6 deberían ser focalizadas para los usuarios nunca activos e inducirlos a entrar en la aplicación. Desafortunadamente, tanto en general como por subpoblión, los usuarios no respondieron signficativamente a los tratamientos para aumentar su gasto. 
+
+T5 debe ser focalizado en quienes no tienen su teléfono verificado. T2, T3, y T6 deben estar dirigidos a quienes tienen su teléfono verificado. Con esto se logrará que entren en la aplicación.
