@@ -383,7 +383,16 @@ Ahora el ITT el grupo de tratamiento 6 es significativo a diferencia de la pregu
 
 ### 14 (4ptos). Describre que variables necesitas para hacer un análisis costo beneficio completo. Les doy algunas: Ticket promedio $100, Customer Lifetime value: $1,100. Con esto, que sistema de incentivos recomendarías? Porqué? Muestra el razonamiento detrás de tu recomendación
 
-Para los tratamientos lump-sum (t1 y t2) que consisten en regalar cupones encontramos que el impacto en compras es  estadísticamente igual a 0. Entonces el beneficio marginal, sin importar de cuánto sea el margen, es de 0. 
+Para los tratamientos lump-sum (t1 y t2) que consisten en regalar cupones encontramos que el impacto en compras es  estadísticamente igual a 0. Entonces el beneficio marginal, sin importar de cuánto sea el margen, es de 0. No es una buena estrategia entorno a las ganancias de la empresa ejecutar estos dos tratamientos. 
+
+Para el caso de los tratamientos 3 y 4 podemos utilizar alguna de las variables recomendadas y valorar cuanto gasta la empresa en la promoción y cuanto podría ganar respecto al comportamiento potencial de su cliente. Por ejemplo, con un ticket promedio de \$100, el costo de las promociones sería en valor esperado \$20 y \$25 respectivamente. Por otro lado el beneficio de las promociones es igual a 0 ya que los resultados tampoco fueron significativos estadísticamente. 
+
+De acuerdo con algunas fuentes de Internet, el pocentaje de comisión de Rappi es aproximadamente de 20%. 
+
+Podemos asumir los percentiles de gasto en los tickets promedio por usuario y analizar a partir de qué punto los beneficios > costos. 
+Por ejemplo, si asumimos que el primer decil tiene un ticket promedio aproximadamente de \$60 entonces el costo es de `r 60*(0.20)` ó `r 60*(0.25)`. El beneficio .....
+
+
 
 
 ### 15 (2ptos). Realiza la estimación de efectos heterogeneos para ambas variables usando `population`. Que encuentras? existe alguna subpoblación para la que los efectos difieran del promedio? Para cada efecto, muestra gráficas como lo hiciste en los ITTs
