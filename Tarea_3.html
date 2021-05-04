@@ -518,8 +518,9 @@ summarise(n_pop=n())
 
 estratos_sum%&gt;%
   kbl(caption = &quot;Tabla: Distribución de los grupos por estrato y tratamiento&quot;,align = &#39;c&#39;) %&gt;%
-  kable_classic(full_width = F, html_font = &quot;Cambria&quot;)</code></pre>
-<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+  kable_classic(full_width = F, html_font = &quot;Cambria&quot;)%&gt;% 
+  footnote(general = &quot;Los missfits son las observaciones que tienen NA en el tratamiento.&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;border-bottom: 0;">
 <caption>
 Tabla: Distribución de los grupos por estrato y tratamiento
 </caption>
@@ -2419,6 +2420,18 @@ NA
 </td>
 </tr>
 </tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<span style="font-style: italic;">Note: </span>
+</td>
+</tr>
+<tr>
+<td style="padding: 0; " colspan="100%">
+<sup></sup> Los missfits son las observaciones que tienen NA en el tratamiento.
+</td>
+</tr>
+</tfoot>
 </table>
 <pre class="r"><code>estratos_sum_missfit&lt;-estratos$data%&gt;%
 group_by(strata,missfit)%&gt;%
@@ -2431,9 +2444,8 @@ estratos_sum_missfit_2&lt;-estratos$summary_strata
 
 estratos_sum_missfit_2%&gt;%
   kbl(caption = &quot;Tabla: Distribuciones de observaciones y misfits por grupos&quot;,align = &#39;c&#39;) %&gt;%
-  kable_classic(full_width = F, html_font = &quot;Cambria&quot;) %&gt;% 
-  footnote(general = &quot;Los missfits son las observaciones que tienen NA en el tratamiento.&quot;)</code></pre>
-<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;border-bottom: 0;">
+  kable_classic(full_width = F, html_font = &quot;Cambria&quot;) </code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 Tabla: Distribuciones de observaciones y misfits por grupos
 </caption>
@@ -2941,18 +2953,6 @@ No info
 </td>
 </tr>
 </tbody>
-<tfoot>
-<tr>
-<td style="padding: 0; " colspan="100%">
-<span style="font-style: italic;">Note: </span>
-</td>
-</tr>
-<tr>
-<td style="padding: 0; " colspan="100%">
-<sup></sup> Los missfits son las observaciones que tienen NA en el tratamiento.
-</td>
-</tr>
-</tfoot>
 </table>
 <p>Así el número total de missfits es:</p>
 <pre class="r"><code>sum(estratos_sum_missfit_2$n_missfits)</code></pre>
@@ -3654,6 +3654,11 @@ R cuadrada
 </div>
 <div id="elabora-un-pitch-de-negocio-sobre-los-beneficios-que-este-experimento-podría-dejar-a-rappi." class="section level3">
 <h3>10. Elabora un pitch de negocio sobre los beneficios que este experimento podría dejar a Rappi.</h3>
+<p>El expermiento al ser implementado podría traer multiples benefcios para Rappi.</p>
+<ul>
+<li><p>El primer beneficio es el experimento nos puede ayudar a encontrar los grupos que mejor responden a este tipo de incentivos, por lo que podrían en adelante pensarse tanto el diseño como el contenido de los mensajes o de los productos participantes en los cupones de acuerdo a las características de los individuos. (Por ejemplo: diseñar campañas para personas con las características particulares como mujeres de alto ingreso, o hombres con pedidos frecuentes de montos bajos, etc.) De esta manera, se podría potenciar el resultado de estas promociones.</p></li>
+<li><p>Otro beneficio es que si los mensajes recordatorios o informativos se envían a través de la aplicación de Rappi o por correo electrónico el costo del envío del mensaje resulta prácticamente nulo, y los beneficios que podrían esperarse pueden ser elevados. Incluso considerando los cupones, que si bien tienen un costo para la empresa, con la elaboración del experimentó permitiría usar más eficientemente los recursos, pues permitiría identificar los grupos a los que resulta más rentable para la empresa otorgar estos beneficios. Esto permitirá obtener mejores beneficios para la empresa que si se empleara una campaña con cupones para todos los usuarios de la aplicación.</p></li>
+</ul>
 </div>
 </div>
 <div id="evaluación" class="section level2">
@@ -3752,7 +3757,14 @@ ggplot(ics,aes(tratamiento,estimate))+
 </div>
 <div id="ptos.-describre-que-variables-necesitas-para-hacer-un-análisis-costo-beneficio-completo.-les-doy-algunas-ticket-promedio-100-customer-lifetime-value-1100.-con-esto-que-sistema-de-incentivos-recomendarías-porqué-muestra-el-razonamiento-detrás-de-tu-recomendación" class="section level3">
 <h3>14 (4ptos). Describre que variables necesitas para hacer un análisis costo beneficio completo. Les doy algunas: Ticket promedio $100, Customer Lifetime value: $1,100. Con esto, que sistema de incentivos recomendarías? Porqué? Muestra el razonamiento detrás de tu recomendación</h3>
-<p>Para los tratamientos lump-sum (t1 y t2) que consisten en regalar cupones encontramos que el impacto en compras es estadísticamente igual a 0. Entonces el beneficio marginal, sin importar de cuánto sea el margen, es de 0.</p>
+<p>Para los tratamientos lump-sum (t1 y t2) que consisten en regalar cupones encontramos que el impacto en compras es estadísticamente igual a 0. Entonces el beneficio marginal, sin importar de cuánto sea el margen, es de 0. No es una buena estrategia entorno a las ganancias de la empresa ejecutar estos dos tratamientos.</p>
+<p>Para el caso de los tratamientos 3 y 4 podemos utilizar alguna de las variables recomendadas y valorar cuanto gasta la empresa en la promoción y cuanto podría ganar respecto al comportamiento potencial de su cliente. Por ejemplo, con un ticket promedio de $100, el costo de las promociones sería en valor esperado $20 y $25 respectivamente. Por otro lado el beneficio de las promociones es igual a 0 ya que los resultados tampoco fueron significativos estadísticamente.</p>
+<p>De acuerdo con algunas fuentes de Internet, el pocentaje de comisión de Rappi es aproximadamente de 20%.</p>
+<p>Podemos asumir los percentiles de gasto en los tickets promedio por usuario y analizar a partir de qué punto los beneficios &gt; costos. Por ejemplo, si asumimos que el primer decil tiene un ticket promedio aproximadamente de $60 entonces el costo es de 12 ó 15. Sin embargo el impacto sigue siendo igual a cero.</p>
+<p>Para la estimación con logaritmo, puede ser que quienes no había hecho una compra y fueron inducidos a comprar son los que están jalando el impacto del tratamiento 6. Sin embargo, como sus compras son pequeñas, no jalan el nivel de compra. Entonces el mayor beneficio saldría al focalizar estos grupos.</p>
+<p>El beneficio marginal naive sería customer_lifetime_value*margen+impacto*ticketpromedio*margen y el costo 0.04*ticketpromedio. Para tener una mejor estimacion necesitaríamos una forma de mapear a los referidos con quien los refirió.</p>
+<p>Sería ideal tener información de cuántos referidos tuvo cada individuo (con su código de amigo) para calcular puntualmente qué porcentaje tuvo de descuento de las ventas totales. Además sería útil conocer si los invitados originados por el programa realizaron compras para calcular de mejor manera los beneficios del programa.</p>
+<p>Dado que no tenemos esta información, realizamos los supuestos de que los tratados sólo invitaron a un amigo y calculamos los beneficios únicamente a través de las ventas de los individuos de la muestra (no con las de sus amigos). Quizá por esto salieron resultados poco rentables para Rappi.</p>
 </div>
 <div id="ptos.-realiza-la-estimación-de-efectos-heterogeneos-para-ambas-variables-usando-population.-que-encuentras-existe-alguna-subpoblación-para-la-que-los-efectos-difieran-del-promedio-para-cada-efecto-muestra-gráficas-como-lo-hiciste-en-los-itts" class="section level3">
 <h3>15 (2ptos). Realiza la estimación de efectos heterogeneos para ambas variables usando <code>population</code>. Que encuentras? existe alguna subpoblación para la que los efectos difieran del promedio? Para cada efecto, muestra gráficas como lo hiciste en los ITTs</h3>
@@ -3866,7 +3878,8 @@ grid.arrange(d,e)</code></pre>
 </div>
 <div id="presenta-una-propuesta-de-focalización-con-base-en-tus-resultados-generales-y-heterogeneos." class="section level3">
 <h3>17. Presenta una propuesta de focalización con base en tus resultados generales y heterogeneos.</h3>
-<p>Nos dimos cuenta que T3 y T4 deberían ser focalizadas para los usuarios nunca activos e inducirlos a entrar en la aplicación.</p>
+<p>Nos dimos cuenta que T3,T4 y T6 deberían ser focalizadas para los usuarios nunca activos e inducirlos a entrar en la aplicación. Desafortunadamente, tanto en general como por subpoblión, los usuarios no respondieron signficativamente a los tratamientos para aumentar su gasto.</p>
+<p>T5 debe ser focalizado en quienes no tienen su teléfono verificado. T2, T3, y T6 deben estar dirigidos a quienes tienen su teléfono verificado. Con esto se logrará que entren en la aplicación.</p>
 </div>
 </div>
 

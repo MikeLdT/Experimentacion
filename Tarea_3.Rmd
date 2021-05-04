@@ -171,7 +171,8 @@ summarise(n_pop=n())
 
 estratos_sum%>%
   kbl(caption = "Tabla: Distribución de los grupos por estrato y tratamiento",align = 'c') %>%
-  kable_classic(full_width = F, html_font = "Cambria")
+  kable_classic(full_width = F, html_font = "Cambria")%>% 
+  footnote(general = "Los missfits son las observaciones que tienen NA en el tratamiento.")
 
 estratos_sum_missfit<-estratos$data%>%
 group_by(strata,missfit)%>%
@@ -184,8 +185,7 @@ estratos_sum_missfit_2<-estratos$summary_strata
 
 estratos_sum_missfit_2%>%
   kbl(caption = "Tabla: Distribuciones de observaciones y misfits por grupos",align = 'c') %>%
-  kable_classic(full_width = F, html_font = "Cambria") %>% 
-  footnote(general = "Los missfits son las observaciones que tienen NA en el tratamiento.")
+  kable_classic(full_width = F, html_font = "Cambria") 
 ```
 
 Así el número total de missfits es:
@@ -254,6 +254,12 @@ Los 3 supuestos de la asignación son:
 
 
 ### 10. Elabora un pitch de negocio sobre los beneficios que este experimento podría dejar a Rappi. 
+
+El expermiento al ser implementado podría traer multiples benefcios para Rappi.
+
+  - El primer beneficio es el experimento nos puede ayudar a encontrar los grupos que mejor responden a este tipo de incentivos, por lo que podrían en adelante pensarse tanto el diseño como el contenido de los mensajes o de los productos participantes en los cupones de acuerdo a las características de los individuos. (Por ejemplo: diseñar campañas para personas con las características particulares como mujeres de alto ingreso, o hombres con pedidos frecuentes de montos bajos, etc.) De esta manera, se podría potenciar el resultado de estas promociones.
+
+  - Otro beneficio es que si los mensajes recordatorios o informativos se envían a través de la aplicación de Rappi o por correo electrónico el costo del envío del mensaje resulta prácticamente nulo, y los beneficios que podrían esperarse pueden ser elevados. Incluso considerando los cupones, que si bien tienen un costo para la empresa, con la elaboración del experimentó permitiría usar más eficientemente los recursos, pues permitiría identificar los grupos a los que resulta más rentable para la empresa otorgar estos beneficios. Esto permitirá obtener mejores beneficios para la empresa que si se empleara una campaña con cupones para todos los usuarios de la aplicación.
 
 ## Evaluación 
 
@@ -390,9 +396,15 @@ Para el caso de los tratamientos 3 y 4 podemos utilizar alguna de las variables 
 De acuerdo con algunas fuentes de Internet, el pocentaje de comisión de Rappi es aproximadamente de 20%. 
 
 Podemos asumir los percentiles de gasto en los tickets promedio por usuario y analizar a partir de qué punto los beneficios > costos. 
-Por ejemplo, si asumimos que el primer decil tiene un ticket promedio aproximadamente de \$60 entonces el costo es de `r 60*(0.20)` ó `r 60*(0.25)`. El beneficio .....
+Por ejemplo, si asumimos que el primer decil tiene un ticket promedio aproximadamente de \$60 entonces el costo es de `r 60*(0.20)` ó `r 60*(0.25)`. Sin embargo el impacto sigue siendo igual a cero.
 
+Para la estimación con logaritmo, puede ser que quienes no había hecho una compra y fueron inducidos a comprar son los que están jalando el impacto del tratamiento 6. Sin embargo, como sus compras son pequeñas, no jalan el nivel de compra. Entonces el mayor beneficio saldría al focalizar estos grupos.
 
+El beneficio marginal naive sería customer_lifetime_value\*margen+impacto\*ticketpromedio\*margen y el costo 0.04\*ticketpromedio. Para tener una mejor estimacion necesitaríamos una forma de mapear a los referidos con quien los refirió.
+
+Sería ideal tener información de cuántos referidos tuvo cada individuo (con su código de amigo) para calcular puntualmente qué porcentaje tuvo de descuento de las ventas totales. Además sería útil conocer si los invitados originados por el programa realizaron compras para calcular de mejor manera los beneficios del programa.
+
+Dado que no tenemos esta información, realizamos los supuestos de que los tratados sólo invitaron a un amigo y calculamos los beneficios únicamente a través de las ventas de los individuos de la muestra (no con las de sus amigos). Quizá por esto salieron resultados poco rentables para Rappi.
 
 
 ### 15 (2ptos). Realiza la estimación de efectos heterogeneos para ambas variables usando `population`. Que encuentras? existe alguna subpoblación para la que los efectos difieran del promedio? Para cada efecto, muestra gráficas como lo hiciste en los ITTs
